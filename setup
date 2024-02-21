@@ -1,0 +1,60 @@
+#!/bin/bash
+
+# Create directory for Terraform
+sudo mkdir -p /opt/terraform
+cd /opt/terraform
+
+# Download Terraform
+sudo wget https://releases.hashicorp.com/terraform/1.5.7/terraform_1.5.7_linux_386.zip
+
+# Install unzip
+sudo apt-get install unzip -y
+
+# Unzip Terraform
+sudo unzip terraform_1.5.7_linux_386.zip
+
+# Move Terraform binary to /usr/bin/
+sudo mv /opt/terraform/terraform /usr/bin/
+
+# Return to home directory
+cd /home/ubuntu/
+
+# Download AWS CLI
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+sudo unzip awscliv2.zip
+
+# Install AWS CLI
+sudo ./aws/install
+
+# Check AWS CLI version
+aws --version
+
+# Create directory for EKS (if it doesn't exist)
+mkdir -p eks
+cd eks
+
+# Create and edit Terraform configuration files (variables.tf and main.tf) as needed
+sudo vi variables.tf
+sudo vi main.tf
+
+# Initialize Terraform
+terraform init
+
+# Generate and review Terraform plan
+terraform plan
+
+# Apply Terraform changes automatically (use --auto-approve for non-interactive mode)
+terraform apply --auto-approve
+
+# Download and install kubectl
+sudo curl --silent --location -o /usr/local/bin/kubectl https://s3.us-west-2.amazonaws.com/amazon-eks/1.22.6/2022-03-09/bin/linux/amd64/kubectl
+sudo chmod +x /usr/local/bin/kubectl
+
+# Check kubectl version
+kubectl version --short --client
+
+# Configure AWS CLI to use the EKS cluster
+aws eks update-kubeconfig --name my-eks-cluster --region ap-south-1
+
+# List Kubernetes nodes
+kubectl get nodes
