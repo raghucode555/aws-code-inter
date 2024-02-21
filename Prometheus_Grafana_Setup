@@ -1,0 +1,99 @@
+Prometheus_Grafana_Setup
+
+Prerequisites:
+ 
+An existing EKS cluster on AWS
+Helm installed on your local machine
+ 
+Step 1: Create a Namespace for Prometheus and Grafana
+ 
+Create a namespace for Prometheus and Grafana to isolate their resources from other workloads in your cluster:
+ 
+kubectl create namespace monitoring
+ 
+Step 2: Install Prometheus using Helm
+ 
+Add the Helm repository for Prometheus:
+ 
+helm repo add prometheus https://prometheus-community.github.io/helm-charts
+ 
+ 
+Install Prometheus in the monitoring namespace:
+ 
+helm install prometheus --namespace monitoring prometheus/prometheus
+ 
+ 
+Step 3: Install Grafana using Helm
+ 
+Add the Helm repository for Grafana:
+ 
+ 
+Bash
+helm repo add grafana https://grafana.github.io/helm-charts
+ 
+ 
+Install Grafana in the monitoring namespace:
+ 
+ 
+Bash
+helm install grafana --namespace monitoring grafana/grafana
+ 
+ 
+Step 4: Configure Prometheus to scrape AWS resources
+ 
+Create a ConfigMap to define the AWS resources you want to monitor:
+ 
+ 
+YAML
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aws-resources
+  namespace: monitoring
+data:
+  aws-resources.yaml: |
+    - type: ec2
+      region: us-east-1
+      tags:
+        Name: *
+    - type: ebs
+      region: us-east-1
+      tags:
+        Name: *
+ 
+Create a ServiceMonitor to instruct Prometheus to scrape the AWS resources from the ConfigMap:
+ 
+ 
+YAML
+apiVersion: monitoring.k8s.io/v1
+kind: ServiceMonitor
+metadata:
+  name: aws-resources-monitor
+  namespace: monitoring
+spec:
+  endpoints:
+  - port: 9090
+    interval: 1m
+  selector:
+    matchLabels:
+      app: prometheus-server
+  namespaceSelector:
+    matchLabels:
+      monitor: monitoring
+  scrapeTargets:
+  - from: ConfigMap
+    configMapRef:
+      name: aws-resources
+      namespace: monitoring
+ 
+ 
+Step 5: Access Grafana
+ 
+To access Grafana, you'll need to port-forward the Grafana service to your local machine:
+ 
+kubectl port-forward --namespace monitoring svc/grafana 3000:3000
+ 
+Open a web browser and go to http://localhost:3000. You'll be prompted to create an admin user. Once you've logged in, you can start creating dashboards to visualize your AWS resource metrics.
+ 
+Hope this helps.
+ 
